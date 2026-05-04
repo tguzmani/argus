@@ -7,6 +7,7 @@ from apps.reviews.serializers import (
     ReviewSessionDetailSerializer,
     ReviewSessionSerializer,
 )
+from apps.reviews.tasks import run_review
 
 
 class ReviewSessionListCreateView(generics.ListCreateAPIView):
@@ -17,6 +18,9 @@ class ReviewSessionListCreateView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         session = serializer.save()
+
+        run_review.delay(session.id)
+
         return Response(
             {"id": session.id, "thread_id": str(session.thread_id), "status": session.status},
             status=status.HTTP_201_CREATED,
